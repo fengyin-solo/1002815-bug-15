@@ -28,6 +28,30 @@ class EntryPayload(BaseModel):
     remark: str | None = None
 
 
+class ImportPayload(BaseModel):
+    """表格导入：columns 为表头，rows 为数据行，offset 为断点续传时已入库的数据行数。"""
+
+    columns: list[str] = Field(default_factory=list)
+    rows: list[list[Any]] = Field(default_factory=list)
+    offset: int = Field(default=0, ge=0)
+
+
+class RejectedRow(BaseModel):
+    """被退回的表格行：行号对应原始表格的数据行号（含续传偏移）。"""
+
+    row: int
+    reason: str
+
+
+class ImportResult(BaseModel):
+    ok: bool
+    message: str
+    created: int = 0
+    updated: int = 0
+    rejected: list[RejectedRow] = Field(default_factory=list)
+    next_row: int = 1
+
+
 
 class PlotEntry(BaseModel):
     """绿地明细结构。"""

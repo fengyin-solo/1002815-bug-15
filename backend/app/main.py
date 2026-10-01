@@ -32,7 +32,27 @@ def health() -> dict[str, object]:
     return {"ok": True, "app": settings.app_name, "modules": len(store.module_names())}
 
 
+def _irrigation_water_total() -> float:
+    """汇总灌溉明细里的用水量；空着的单元格跳过，不当作 0 充数。"""
+    total = 0.0
+    for row in store.rows("irrigation"):
+        raw = row.get("用水量")
+        if raw is None:
+            continue
+        text = str(raw).strip().removesuffix("吨").strip()
+        if not text:
+            continue
+        try:
+            total += float(text)
+        except ValueError:
+            continue
+    return round(total, 2)
+
+
 @app.get("/api/overview")
 def overview() -> dict[str, object]:
     """运营概览：把各业务模块的待处理量汇总成看板卡片。"""
-    return store.overview()
+    data = store.overview()
+    # 灌溉用水量跟着灌溉明细走，明细一改这里即变。
+    data["cards"].append({"label": "灌溉用水量", "value": _irrigation_water_total()})
+    return data
